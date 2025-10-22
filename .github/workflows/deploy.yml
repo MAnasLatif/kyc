@@ -15,15 +15,20 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  DOCKER_IMAGE: ${{ vars.DOCKER_IMAGE || format('ghcr.io/{0}/{1}', toLower(github.repository_owner), github.event.repository.name) }}
-  APP_NAME: ${{ vars.APP_NAME || github.event.repository.name }}
-
 jobs:
   build:
     name: Build & Push to GHCR
     runs-on: ubuntu-latest
+    env:
+      DOCKER_IMAGE: ${{ vars.DOCKER_IMAGE || format('ghcr.io/{0}/{1}', github.repository_owner, github.event.repository.name) }}
+      APP_NAME: ${{ vars.APP_NAME || github.event.repository.name }}
     steps:
+      - name: Set lowercase image name
+        id: image
+        run: |
+          echo "DOCKER_IMAGE=$(echo "${{ env.DOCKER_IMAGE }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "APP_NAME=${{ env.APP_NAME }}" >> $GITHUB_ENV
+      
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -52,7 +57,16 @@ jobs:
     name: Deploy on EC2
     needs: build
     runs-on: ubuntu-latest
+    env:
+      DOCKER_IMAGE: ${{ vars.DOCKER_IMAGE || format('ghcr.io/{0}/{1}', github.repository_owner, github.event.repository.name) }}
+      APP_NAME: ${{ vars.APP_NAME || github.event.repository.name }}
     steps:
+      - name: Set lowercase image name
+        id: image
+        run: |
+          echo "DOCKER_IMAGE=$(echo "${{ env.DOCKER_IMAGE }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "APP_NAME=${{ env.APP_NAME }}" >> $GITHUB_ENV
+      
       - name: Checkout docker-compose.yml
         uses: actions/checkout@v4
         with:
