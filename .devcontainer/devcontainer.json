@@ -1,0 +1,16 @@
+{
+    "name": "kyc-app",
+    "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye",
+    "postCreateCommand": "npm install",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "Prisma.prisma",
+                "dbaeumer.vscode-eslint"
+            ]
+        }
+    },
+    "forwardPorts": [
+        3000
+    ]
+}

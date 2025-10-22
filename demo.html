@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KYC Verification Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .iframe-container {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .iframe-container.active {
+            display: block;
+        }
+
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-btn {
+            margin-top: 15px;
+            background: #6c757d;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="formSection">
+            <h1>🔐 KYC Verification</h1>
+            <p class="subtitle">Complete identity verification with face & document check</p>
+
+            <div class="info-box">
+                <p><strong>What you'll need:</strong></p>
+                <p>✓ Valid ID (Passport, ID Card, or Driving License)<br>
+                    ✓ Camera access for selfie/video verification<br>
+                    ✓ Good lighting conditions</p>
+            </div>
+
+            <form id="kycForm">
+                <div class="form-group">
+                    <label for="userId">User ID *</label>
+                    <input type="text" id="userId" required placeholder="e.g., user_123">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" required placeholder="your@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <select id="country">
+                        <option value="">Select country (optional)</option>
+                        <option value="PK">Pakistan</option>
+                        <option value="IN">India</option>
+                        <option value="US">United States</option>
+                        <option value="GB">United Kingdom</option>
+                        <option value="AE">UAE</option>
+                        <option value="SA">Saudi Arabia</option>
+                        <option value="CA">Canada</option>
+                        <option value="AU">Australia</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="locale">Language</label>
+                    <select id="locale">
+                        <option value="en">English</option>
+                        <option value="ar">Arabic</option>
+                        <option value="ur">Urdu</option>
+                        <option value="fr">French</option>
+                        <option value="es">Spanish</option>
+                    </select>
+                </div>
+
+                <button type="submit" id="submitBtn">Start Verification</button>
+            </form>
+
+            <div class="status" id="status"></div>
+        </div>
+
+        <div class="iframe-container" id="iframeSection">
+            <h2 style="margin-bottom: 15px; color: #333;">Complete Your Verification</h2>
+            <iframe id="kycIframe" allow="camera;microphone"></iframe>
+            <button class="back-btn" onclick="goBack()">← Back to Form</button>
+            <div class="status info" style="display: block; margin-top: 15px;">
+                <strong>Note:</strong> Follow the on-screen instructions to complete verification.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000'; // Change for production
+
+        const form = document.getElementById('kycForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const status = document.getElementById('status');
+        const formSection = document.getElementById('formSection');
+        const iframeSection = document.getElementById('iframeSection');
+        const kycIframe = document.getElementById('kycIframe');
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+
+            if (type !== 'info') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function goBack() {
+            iframeSection.classList.remove('active');
+            formSection.style.display = 'block';
+            kycIframe.src = '';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userId = document.getElementById('userId').value;
+            const email = document.getElementById('email').value;
+            const country = document.getElementById('country').value;
+            const locale = document.getElementById('locale').value;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating session...';
+            showStatus('Creating verification session...', 'info');
+
+            try {
+                const response = await fetch(`${API_URL}/kyc/session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId,
+                        email,
+                        country: country || undefined,
+                        locale,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (data.ok && data.iframeUrl) {
+                    showStatus('Session created! Loading verification...', 'success');
+
+                    // Store reference for later
+                    sessionStorage.setItem('kycReference', data.reference);
+
+                    // Show iframe
+                    setTimeout(() => {
+                        kycIframe.src = data.iframeUrl;
+                        formSection.style.display = 'none';
+                        iframeSection.classList.add('active');
+                    }, 1000);
+                } else {
+                    showStatus(data.error || 'Failed to create session', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Start Verification';
+                }
+            } catch (error) {
+                showStatus('Network error. Please check if server is running.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Start Verification';
+            }
+        });
+
+        // Listen for messages from iframe (if Shufti sends postMessage)
+        window.addEventListener('message', (event) => {
+            console.log('Received message:', event.data);
+
+            // Handle verification complete
+            if (event.data.status === 'complete') {
+                goBack();
+                showStatus('Verification completed! Checking status...', 'success');
+
+                // Optionally poll for status
+                const reference = sessionStorage.getItem('kycReference');
+                if (reference) {
+                    setTimeout(() => {
+                        checkStatus(reference);
+                    }, 2000);
+                }
+            }
+        });
+
+        async function checkStatus(reference) {
+            try {
+                const response = await fetch(`${API_URL}/kyc/session/${reference}`);
+                const data = await response.json();
+
+                if (data.ok) {
+                    const status = data.session.status;
+                    showStatus(`Verification Status: ${status.toUpperCase()}`,
+                        status === 'accepted' ? 'success' : 'info');
+                }
+            } catch (error) {
+                console.error('Status check failed:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>
