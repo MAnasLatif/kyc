@@ -232,7 +232,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3002'; // Change for production
+        const API_URL = window.location.hostname || '';
 
         const form = document.getElementById('kycForm');
         const submitBtn = document.getElementById('submitBtn');
