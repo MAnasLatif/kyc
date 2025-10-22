@@ -2,8 +2,13 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import path from "path";
+import { fileURLToPath } from "url";
 import { CONFIG } from "./config.js";
 import kycRoutes from "./routes/kyc.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -15,6 +20,11 @@ app.use(morgan("tiny"));
 
 // Routes
 app.use("/kyc", kycRoutes);
+
+// Serve demo.html on root
+app.get("/", (_, res) => {
+  res.sendFile(path.join(__dirname, "../demo.html"));
+});
 
 // Health check
 app.get("/health", (_, res) => {
