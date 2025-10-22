@@ -3,9 +3,7 @@ name: Build & Deploy (GHCR + EC2)
 on:
   push:
     tags:
-      - '*'
-    branches:
-      - main
+      - 'v*.*.*'
 
 permissions:
   contents: read
