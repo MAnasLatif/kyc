@@ -13,7 +13,25 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Security & logging middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        frameSrc: [
+          "'self'",
+          "https://shuftipro.com",
+          "https://*.shuftipro.com",
+        ],
+        frameAncestors: ["'self'"],
+      },
+    },
+  })
+);
 app.use(cors());
 app.use(express.json({ type: "*/*", limit: "2mb" }));
 app.use(morgan("tiny"));
