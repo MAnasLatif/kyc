@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DOCKER_IMAGE: ${{ vars.DOCKER_IMAGE || format('ghcr.io/{0}/{1}', github.repository_owner, github.event.repository.name) }}
+  DOCKER_IMAGE: ${{ vars.DOCKER_IMAGE || format('ghcr.io/{0}/{1}', toLower(github.repository_owner), github.event.repository.name) }}
   APP_NAME: ${{ vars.APP_NAME || github.event.repository.name }}
 
 jobs:
@@ -36,10 +36,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Create .env file
-        run: |
-          printf "%s" "${{ secrets.ENV_FILE }}" > .env
 
       - name: Build & Push
         uses: docker/build-push-action@v6
