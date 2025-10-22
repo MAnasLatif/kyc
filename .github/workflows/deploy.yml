@@ -1,0 +1,150 @@
+name: Build & Deploy (GHCR + EC2)
+
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOCKER_IMAGE: ${{ vars.DOCKER_IMAGE || format('ghcr.io/{0}/{1}', github.repository_owner, github.event.repository.name) }}
+  APP_NAME: ${{ vars.APP_NAME || github.event.repository.name }}
+
+jobs:
+  build:
+    name: Build & Push to GHCR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create .env file
+        run: |
+          printf "%s" "${{ secrets.ENV_FILE }}" > .env
+
+      - name: Build & Push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:latest
+            ${{ env.DOCKER_IMAGE }}:${{ github.ref_name }}
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:latest
+          cache-to: type=inline
+
+  deploy:
+    name: Deploy on EC2
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout docker-compose.yml
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            docker-compose.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Write SSH key
+        shell: bash
+        run: |
+          umask 077
+          printf "%s" "${{ secrets.EC2_KEY }}" > ec2_key.pem
+
+      - name: Create app directory on EC2
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}"
+
+      - name: Copy docker-compose.yml to EC2
+        run: |
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}/
+
+      - name: Write .env file on EC2
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
+            printf "%s" "${{ secrets.ENV_FILE }}" > .env
+          EOF
+
+      - name: Write .env.docker file on EC2
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
+            printf "DOCKER_IMAGE=%s:latest\n" "${{ env.DOCKER_IMAGE }}" > .env.docker
+            printf "CONTAINER_NAME=%s\n" "${{ env.APP_NAME }}" >> .env.docker
+          EOF
+
+      - name: Login to GHCR on EC2
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            echo "${{ secrets.GHCR_PAT_READ }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+          EOF
+
+      - name: Pull Docker image
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
+            docker compose --env-file .env.docker pull
+          EOF
+
+      - name: Stop old containers
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
+            docker compose --env-file .env.docker down || true
+          EOF
+
+      - name: Start containers
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
+            docker compose --env-file .env.docker up -d
+          EOF
+
+      - name: Check container status
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
+            docker compose --env-file .env.docker ps
+          EOF
+
+      - name: Cleanup unused images
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            docker image prune -f
+          EOF
+      
+      - name: Cleanup stopped containers
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            docker container prune -f
+          EOF
+
+      - name: Logout from GHCR
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            docker logout ghcr.io
+          EOF
+
+      - name: Cleanup local key
+        if: always()
+        run: rm -f ec2_key.pem
