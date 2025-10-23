@@ -1,10 +1,17 @@
 import axios from "axios";
 import { CONFIG } from "../config.js";
 
+// Create Basic Auth token manually
+const basicAuth = Buffer.from(
+  `${CONFIG.CLIENT_ID}:${CONFIG.SECRET_KEY}`
+).toString("base64");
+
 const api = axios.create({
   baseURL: CONFIG.API_URL,
-  auth: { username: CONFIG.CLIENT_ID, password: CONFIG.SECRET_KEY },
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${basicAuth}`,
+  },
   timeout: 15000,
 });
 
@@ -61,9 +68,28 @@ export async function createVerificationSession(params: {
       show_results: "1",
     };
 
+    console.log("📤 Sending Shufti Pro request:", {
+      url: CONFIG.API_URL,
+      reference: params.reference,
+      email: params.email,
+      country: params.userCountry,
+    });
+
     const { data, status } = await api.post("/", payload);
+
+    console.log("📥 Shufti Pro response:", {
+      status,
+      data: JSON.stringify(data).substring(0, 200),
+    });
+
     return { success: status === 200, response: data };
   } catch (error: any) {
+    console.error("❌ Shufti Pro error:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+
     return {
       success: false,
       response: error.response?.data ?? { message: error.message },
