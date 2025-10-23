@@ -53,7 +53,7 @@ docker-compose.yml
 # Documentation
 README.md
 README.Docker.md
+SQLITE_FIX.md
 
-# Scripts (exclude all except start.sh which is needed in container)
-*.sh
-!start.sh
+# Scripts (exclude deployment scripts but keep start.sh for container)
+deploy.sh
