@@ -12,10 +12,10 @@ services:
       - PORT=3000
       - SHUFTI_CLIENT_ID=${SHUFTI_CLIENT_ID}
       - SHUFTI_SECRET_KEY=${SHUFTI_SECRET_KEY}
-      - DATABASE_URL=file:./dev.db
+      - DATABASE_URL=file:/app/data/dev.db
     volumes:
-      # Mount database volume for persistence
-      - ./prisma:/app/prisma
+      # Use named volume for SQLite database persistence
+      - sqlite-data:/app/data
     healthcheck:
       test:
         [
@@ -28,3 +28,7 @@ services:
       timeout: 3s
       start_period: 5s
       retries: 3
+
+volumes:
+  sqlite-data:
+    driver: local

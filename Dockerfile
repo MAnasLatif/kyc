@@ -56,12 +56,19 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 # Copy demo.html for the root endpoint
 COPY --chown=nodejs:nodejs demo.html ./
 
-# Create directory for SQLite database with proper permissions
-RUN mkdir -p /app/prisma && \
-    chown -R nodejs:nodejs /app/prisma
+# Copy startup script
+COPY --chown=nodejs:nodejs start.sh ./
+
+# Create data directory for SQLite with proper permissions
+RUN mkdir -p /app/data && \
+    chown -R nodejs:nodejs /app/data && \
+    chmod -R 775 /app/data
 
 # Switch to non-root user
 USER nodejs
+
+# Make startup script executable
+RUN chmod +x start.sh
 
 # Expose port
 EXPOSE 3000
@@ -73,5 +80,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the application
-CMD ["node", "dist/index.js"]
+# Start the application with migration
+CMD ["./start.sh"]
