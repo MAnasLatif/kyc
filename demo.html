@@ -313,8 +313,6 @@
 
         // Listen for messages from iframe (if Shufti sends postMessage)
         window.addEventListener('message', (event) => {
-            console.log('Received message:', event.data);
-
             // Handle verification complete
             if (event.data.status === 'complete') {
                 goBack();
