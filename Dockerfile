@@ -56,8 +56,10 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 # Copy demo.html for the root endpoint
 COPY --chown=nodejs:nodejs demo.html ./
 
-# Copy startup script
-COPY --chown=nodejs:nodejs start.sh ./
+# Copy startup script and make it executable
+COPY start.sh ./
+RUN chmod +x start.sh && \
+    chown nodejs:nodejs start.sh
 
 # Create data directory for SQLite with proper permissions
 RUN mkdir -p /app/data && \
@@ -66,9 +68,6 @@ RUN mkdir -p /app/data && \
 
 # Switch to non-root user
 USER nodejs
-
-# Make startup script executable
-RUN chmod +x start.sh
 
 # Expose port
 EXPOSE 3000
