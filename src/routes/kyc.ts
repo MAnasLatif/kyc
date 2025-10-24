@@ -19,6 +19,8 @@ const router = Router();
  */
 router.post("/session", async (req, res) => {
   try {
+    console.log("📥 Received session request:", req.body);
+
     const schema = z.object({
       userId: z.string(),
       email: z.string().email().optional(),
@@ -26,15 +28,31 @@ router.post("/session", async (req, res) => {
       country: z.string().optional(),
     });
     const input = schema.parse(req.body);
+
+    console.log("✅ Validated input:", input);
+
     const rec = await getOrCreateSession(input);
-    res.json({
-      ok: true,
+
+    console.log("✅ Session created/retrieved:", {
       reference: rec.reference,
       iframeUrl: rec.iframeUrl,
       status: rec.status,
       runsCount: rec.runsCount,
     });
+
+    const response = {
+      ok: true,
+      reference: rec.reference,
+      iframeUrl: rec.iframeUrl,
+      status: rec.status,
+      runsCount: rec.runsCount,
+    };
+
+    console.log("📤 Sending response:", response);
+
+    res.json(response);
   } catch (e: any) {
+    console.error("❌ Session creation error:", e);
     res.status(400).json({ ok: false, error: e.message ?? "bad_request" });
   }
 });
@@ -46,14 +64,22 @@ router.post("/session", async (req, res) => {
  */
 router.post("/webhook", async (req, res) => {
   try {
+    console.log("🔔 Webhook received from Shufti Pro:");
+    console.log("Headers:", req.headers);
+    console.log("Body:", JSON.stringify(req.body, null, 2));
+
     const raw = JSON.stringify(req.body);
     const reference =
       req.body?.reference ?? req.body?.reference_id ?? "unknown";
+
+    console.log("📋 Reference ID:", reference);
 
     // TODO: Implement signature verification based on client's account settings
     const signatureValid = true;
 
     await saveWebhook({ rawPayload: raw, signatureValid, reference });
+
+    console.log("💾 Webhook saved to database");
 
     // Parse status
     const result = req.body?.event ?? req.body?.verification_status ?? "";
@@ -69,14 +95,19 @@ router.post("/webhook", async (req, res) => {
       status = "expired";
     }
 
+    console.log("📊 Parsed status:", { result, status });
+
     // Update session if reference is valid
     if (reference !== "unknown") {
+      console.log("🔄 Updating session status to:", status);
       await updateStatus(reference, status as any);
+      console.log("✅ Session status updated");
     }
 
+    console.log("📤 Webhook response: { ok: true }");
     res.status(200).json({ ok: true });
   } catch (e: any) {
-    console.error("Webhook error:", e);
+    console.error("❌ Webhook error:", e);
     res.status(400).json({ ok: false, error: e.message });
   }
 });
@@ -87,9 +118,15 @@ router.post("/webhook", async (req, res) => {
  */
 router.get("/status/:reference", async (req, res) => {
   try {
+    console.log(
+      "🔍 Status check requested for reference:",
+      req.params.reference
+    );
     const out = await serverValidate(req.params.reference);
+    console.log("📊 Status check result:", out);
     res.status(out.success ? 200 : 400).json(out);
   } catch (e: any) {
+    console.error("❌ Status check error:", e);
     res.status(400).json({ ok: false, error: e.message });
   }
 });
