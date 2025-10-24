@@ -53,16 +53,24 @@ export async function getOrCreateSession(opts: {
     redirectUrl: CONFIG.REDIRECT_URL,
   });
 
+  console.log("🔍 Session creation result:", { success, response });
+
   if (!success) {
-    throw new Error(
-      "Failed to create Shufti session: " + JSON.stringify(response)
-    );
+    const errorMsg =
+      response?.message || response?.error?.message || JSON.stringify(response);
+    throw new Error("Failed to create Shufti session: " + errorMsg);
   }
 
   const iframeUrl: string =
     response?.verification_url ?? response?.redirect_url ?? "";
+
+  console.log("🔗 Extracted verification URL:", iframeUrl);
+
   if (!iframeUrl) {
-    throw new Error("No iframe/redirect URL returned from Shufti");
+    throw new Error(
+      "No verification URL returned from Shufti. Response: " +
+        JSON.stringify(response)
+    );
   }
 
   // Increment counter

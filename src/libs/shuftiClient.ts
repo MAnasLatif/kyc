@@ -65,17 +65,22 @@ export async function createVerificationSession(params: {
       // Document services
       document: {
         supported_types: ["id_card", "passport", "driving_license"],
+        name: "",
+        dob: "",
+        document_number: "",
+        expiry_date: "",
+        issue_date: "",
         fetch_enhanced_data: "1",
       },
       // Face (biometric) + doc match
       face: {
-        proof: "", // Empty string allows Shufti to accept image or video
-        verify_document: "1", // match face with document photo
+        proof: "",
       },
       // Optional UX tuning:
-      allow_retry: "0", // client note: true=3 (but we keep 0 per instruction)
-      ttl: 300, // seconds
-      show_results: "1",
+      verification_mode: "any",
+      show_consent: 1,
+      show_results: 1,
+      show_privacy_policy: 1,
     };
 
     console.log("📤 Sending Shufti Pro request:", {
@@ -83,6 +88,7 @@ export async function createVerificationSession(params: {
       reference: params.reference,
       email: params.email,
       country: params.userCountry,
+      payload: JSON.stringify(payload, null, 2),
     });
 
     // Send request with credentials in body (Shufti Pro V2 API format)
@@ -95,8 +101,17 @@ export async function createVerificationSession(params: {
 
     console.log("📥 Shufti Pro response:", {
       status,
-      data: JSON.stringify(data).substring(0, 200),
+      fullData: data,
     });
+
+    // Check if response indicates an error
+    if (data.error || data.message === "INVALID") {
+      console.error("❌ Shufti Pro returned error:", data);
+      return {
+        success: false,
+        response: data,
+      };
+    }
 
     return { success: status === 200, response: data };
   } catch (error: any) {
