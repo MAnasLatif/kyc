@@ -231,10 +231,32 @@
                 4. Follow the on-screen steps to complete face and document verification
             </div>
             <div id="iframeLoading" style="text-align: center; padding: 20px; color: #666;">
-                Loading verification interface...
+                <p>Loading verification interface...</p>
+                <p style="font-size: 12px; margin-top: 10px;">If the verification doesn't load, please check:</p>
+                <ul style="font-size: 12px; text-align: left; max-width: 300px; margin: 10px auto;">
+                    <li>Camera permissions are enabled for this site</li>
+                    <li>No other app is using your camera</li>
+                    <li>Your browser supports camera access</li>
+                </ul>
+                <button onclick="openInNewWindow()"
+                    style="margin-top: 15px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                    🔗 Open Verification in New Window
+                </button>
             </div>
-            <iframe id="kycIframe" allow="camera;microphone" style="display: none;"></iframe>
+            <iframe id="kycIframe"
+                allow="camera *; microphone *; geolocation *; autoplay *; encrypted-media *; fullscreen *"
+                allowfullscreen
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox"
+                style="display: none;"></iframe>
             <button class="back-btn" onclick="goBack()">← Back to Form</button>
+            <button class="back-btn" onclick="openInNewWindow()" style="margin-top: 10px; background: #667eea;">
+                🔗 Open in New Window (if camera not working)
+            </button>
+            <div id="debugInfo"
+                style="font-size: 11px; color: #666; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; display: none;">
+                <strong>Debug Info:</strong><br>
+                <span id="debugUrl"></span>
+            </div>
         </div>
     </div>
 
@@ -247,6 +269,8 @@
         const formSection = document.getElementById('formSection');
         const iframeSection = document.getElementById('iframeSection');
         const kycIframe = document.getElementById('kycIframe');
+
+        let currentVerificationUrl = '';
 
         function showStatus(message, type) {
             status.textContent = message;
@@ -268,6 +292,13 @@
             document.getElementById('iframeLoading').style.display = 'block';
             submitBtn.disabled = false;
             submitBtn.textContent = 'Start Verification';
+        }
+
+        function openInNewWindow() {
+            if (currentVerificationUrl) {
+                window.open(currentVerificationUrl, '_blank', 'width=800,height=900');
+                showStatus('Verification opened in new window. Complete it there and return here.', 'info');
+            }
         }
 
         form.addEventListener('submit', async (e) => {
@@ -301,10 +332,16 @@
                 if (data.ok && data.iframeUrl) {
                     showStatus('Session created! Loading verification...', 'success');
 
-                    // Store reference for later
+                    // Store reference and URL for later
                     sessionStorage.setItem('kycReference', data.reference);
+                    currentVerificationUrl = data.iframeUrl;
 
                     console.log('Loading iframe URL:', data.iframeUrl);
+                    console.log('Full session data:', data);
+
+                    // Show debug info
+                    document.getElementById('debugUrl').textContent = 'URL: ' + data.iframeUrl;
+                    document.getElementById('debugInfo').style.display = 'block';
 
                     // Show iframe
                     setTimeout(() => {
@@ -314,26 +351,33 @@
 
                         // Show iframe once it starts loading
                         kycIframe.onload = function () {
+                            console.log('Iframe onload fired');
                             document.getElementById('iframeLoading').style.display = 'none';
                             kycIframe.style.display = 'block';
-                            console.log('Iframe loaded successfully');
                         };
 
-                        kycIframe.onerror = function () {
+                        kycIframe.onerror = function (e) {
+                            console.error('Iframe error:', e);
                             document.getElementById('iframeLoading').innerHTML =
-                                '<div style="color: #dc3545;">Failed to load verification. Please try again or contact support.</div>';
-                            console.error('Iframe failed to load');
+                                '<div style="color: #dc3545; padding: 20px;"><strong>Failed to load verification interface.</strong><br>' +
+                                'This might be due to:<br>' +
+                                '• Browser security settings blocking the iframe<br>' +
+                                '• Network connectivity issues<br>' +
+                                '• Shufti Pro service unavailable<br><br>' +
+                                'Please try again or contact support.</div>';
                         };
 
-                        // Timeout fallback - show iframe after 3 seconds even if onload doesn't fire
+                        // Timeout fallback - show iframe after 5 seconds even if onload doesn't fire
                         setTimeout(() => {
                             if (kycIframe.style.display === 'none') {
+                                console.log('Timeout: forcing iframe display');
                                 document.getElementById('iframeLoading').style.display = 'none';
                                 kycIframe.style.display = 'block';
                             }
-                        }, 3000);
+                        }, 5000);
                     }, 1000);
                 } else {
+                    console.error('Session creation failed:', data);
                     showStatus(data.error || 'Failed to create session', 'error');
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Start Verification';
