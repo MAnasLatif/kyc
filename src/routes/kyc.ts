@@ -8,6 +8,7 @@ import {
   pickVerificationData,
   getSessionByReference,
   getUserSessions,
+  getWebhookByReference,
 } from "../services/kyc.service.js";
 
 const router = Router();
@@ -148,6 +149,22 @@ router.post("/debug/extract", (req, res) => {
   try {
     const data = pickVerificationData(req.body);
     res.json({ ok: true, data });
+  } catch (e: any) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+/**
+ * GET /kyc/webhook/:reference
+ * Get webhook data for a reference
+ */
+router.get("/webhook/:reference", async (req, res) => {
+  try {
+    const webhook = await getWebhookByReference(req.params.reference);
+    if (!webhook) {
+      return res.status(404).json({ ok: false, error: "Webhook not found" });
+    }
+    res.json({ ok: true, webhook });
   } catch (e: any) {
     res.status(400).json({ ok: false, error: e.message });
   }

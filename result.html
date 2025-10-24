@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KYC Verification Result</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-accepted {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-declined {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-review {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-expired {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .data-section {
+            margin: 20px 0;
+        }
+
+        .data-row {
+            display: flex;
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            font-weight: 600;
+            color: #333;
+            width: 40%;
+            font-size: 14px;
+        }
+
+        .data-value {
+            color: #666;
+            width: 60%;
+            font-size: 14px;
+            word-break: break-word;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 25px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="loadingSection" class="loading">
+            <h1>Loading Verification Data</h1>
+            <div class="spinner"></div>
+            <p>Please wait while we retrieve your verification status...</p>
+        </div>
+
+        <div id="resultSection" style="display: none;">
+            <h1>🔐 Verification Result</h1>
+            <p class="subtitle">Your KYC verification details</p>
+
+            <div id="statusBadge"></div>
+
+            <div class="section-title">Session Information</div>
+            <div class="data-section">
+                <div class="data-row">
+                    <div class="data-label">Reference ID:</div>
+                    <div class="data-value" id="reference"></div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Status:</div>
+                    <div class="data-value" id="status"></div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">User ID:</div>
+                    <div class="data-value" id="userId"></div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Email:</div>
+                    <div class="data-value" id="email"></div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Verification Types:</div>
+                    <div class="data-value" id="allowedTypes"></div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Runs Count:</div>
+                    <div class="data-value" id="runsCount"></div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Created At:</div>
+                    <div class="data-value" id="createdAt"></div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Updated At:</div>
+                    <div class="data-value" id="updatedAt"></div>
+                </div>
+            </div>
+
+            <div id="webhookSection" style="display: none;">
+                <div class="section-title">Webhook Data</div>
+                <div class="data-section">
+                    <div class="data-row">
+                        <div class="data-label">Received:</div>
+                        <div class="data-value" id="webhookReceived"></div>
+                    </div>
+                    <div class="data-row">
+                        <div class="data-label">Signature Valid:</div>
+                        <div class="data-value" id="signatureValid"></div>
+                    </div>
+                    <div class="data-row">
+                        <div class="data-label">Payload:</div>
+                        <div class="data-value">
+                            <pre id="webhookPayload"
+                                style="font-size: 11px; max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 4px;"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box" id="statusInfo"></div>
+
+            <div class="button-group">
+                <button class="btn-secondary" onclick="window.location.href='/demo.html'">← New Verification</button>
+                <button class="btn-primary" onclick="refreshData()">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <div id="errorSection" style="display: none;">
+            <h1>⚠️ Error</h1>
+            <p class="subtitle">Unable to retrieve verification data</p>
+            <div class="error" id="errorMessage"></div>
+            <div class="button-group">
+                <button class="btn-primary" onclick="window.location.href='/demo.html'">← Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+
+        // Get reference from URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const reference = urlParams.get('reference') || sessionStorage.getItem('kycReference');
+
+        async function loadData() {
+            if (!reference) {
+                showError('No reference ID found. Please start a new verification.');
+                return;
+            }
+
+            try {
+                // Fetch session data
+                const sessionResponse = await fetch(`${API_URL}/kyc/session/${reference}`);
+                const sessionData = await sessionResponse.json();
+
+                if (!sessionData.ok) {
+                    showError(sessionData.error || 'Failed to load session data');
+                    return;
+                }
+
+                const session = sessionData.session;
+
+                // Display session data
+                document.getElementById('reference').textContent = session.reference;
+                document.getElementById('status').textContent = session.status.toUpperCase();
+                document.getElementById('userId').textContent = session.userId;
+                document.getElementById('email').textContent = session.user?.email || 'N/A';
+                document.getElementById('allowedTypes').textContent = session.allowedTypes.replace(/,/g, ', ');
+                document.getElementById('runsCount').textContent = session.runsCount;
+                document.getElementById('createdAt').textContent = new Date(session.createdAt).toLocaleString();
+                document.getElementById('updatedAt').textContent = new Date(session.updatedAt).toLocaleString();
+
+                // Status badge
+                const statusBadge = document.getElementById('statusBadge');
+                statusBadge.className = `status-badge status-${session.status}`;
+                statusBadge.textContent = session.status.toUpperCase();
+
+                // Status info
+                const statusInfo = document.getElementById('statusInfo');
+                const statusMessages = {
+                    pending: '⏳ Your verification is pending. Please complete the verification process or wait for the results.',
+                    accepted: '✅ Congratulations! Your verification has been accepted. Your identity has been successfully verified.',
+                    declined: '❌ Your verification was declined. Please try again or contact support for assistance.',
+                    review: '🔍 Your verification is under review. Our team will process it shortly.',
+                    expired: '⌛ This verification session has expired. Please start a new verification.'
+                };
+                statusInfo.innerHTML = `<p><strong>Status Details:</strong><br>${statusMessages[session.status] || 'Unknown status'}</p>`;
+
+                // Try to fetch webhook data
+                try {
+                    const webhookResponse = await fetch(`${API_URL}/kyc/webhook/${reference}`);
+                    const webhookData = await webhookResponse.json();
+
+                    if (webhookData.ok && webhookData.webhook) {
+                        const webhook = webhookData.webhook;
+                        document.getElementById('webhookReceived').textContent = new Date(webhook.receivedAt).toLocaleString();
+                        document.getElementById('signatureValid').textContent = webhook.signatureValid ? 'Yes ✓' : 'No ✗';
+
+                        try {
+                            const payload = JSON.parse(webhook.rawPayload);
+                            document.getElementById('webhookPayload').textContent = JSON.stringify(payload, null, 2);
+                        } catch {
+                            document.getElementById('webhookPayload').textContent = webhook.rawPayload;
+                        }
+
+                        document.getElementById('webhookSection').style.display = 'block';
+                    }
+                } catch (error) {
+                    console.log('No webhook data available yet');
+                }
+
+                // Show result section
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('resultSection').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Network error. Please check if the server is running.');
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'block';
+        }
+
+        function refreshData() {
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('loadingSection').style.display = 'block';
+            loadData();
+        }
+
+        // Load data on page load
+        loadData();
+
+        // Auto-refresh every 10 seconds if status is pending
+        setInterval(() => {
+            const statusElement = document.getElementById('status');
+            if (statusElement && statusElement.textContent === 'PENDING') {
+                refreshData();
+            }
+        }, 10000);
+    </script>
+</body>
+
+</html>

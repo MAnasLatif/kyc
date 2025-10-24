@@ -48,13 +48,20 @@ export async function createVerificationSession(params: {
   redirectUrl?: string;
 }) {
   try {
+    // Append reference to redirect URL
+    let finalRedirectUrl = params.redirectUrl;
+    if (finalRedirectUrl) {
+      const separator = finalRedirectUrl.includes("?") ? "&" : "?";
+      finalRedirectUrl = `${finalRedirectUrl}${separator}reference=${params.reference}`;
+    }
+
     const payload = {
       reference: params.reference,
       email: params.email,
       country: params.userCountry, // optional
       language: params.appLocale ?? "en",
       callback_url: params.callbackUrl,
-      redirect_url: params.redirectUrl,
+      redirect_url: finalRedirectUrl,
       // Document services
       document: {
         supported_types: ["id_card", "passport", "driving_license"],

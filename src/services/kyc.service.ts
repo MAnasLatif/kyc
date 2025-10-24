@@ -150,3 +150,13 @@ export async function getUserSessions(userId: string) {
     orderBy: { createdAt: "desc" },
   });
 }
+
+/**
+ * Get webhook by reference
+ */
+export async function getWebhookByReference(reference: string) {
+  return await prisma.kycWebhook.findFirst({
+    where: { reference },
+    orderBy: { receivedAt: "desc" },
+  });
+}
