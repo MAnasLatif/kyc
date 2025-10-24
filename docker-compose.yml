@@ -7,12 +7,7 @@ services:
       - "3003:3000"
     env_file:
       - .env
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - SHUFTI_CLIENT_ID=${SHUFTI_CLIENT_ID}
-      - SHUFTI_SECRET_KEY=${SHUFTI_SECRET_KEY}
-      - DATABASE_URL=file:/app/data/dev.db
+      - .env.docker
     volumes:
       # Use named volume for SQLite database persistence
       - sqlite-data:/app/data

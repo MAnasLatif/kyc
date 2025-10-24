@@ -62,7 +62,7 @@ export async function createVerificationSession(params: {
       },
       // Face (biometric) + doc match
       face: {
-        proof: "video", // 'image' is also supported; client wanted face
+        proof: "", // Empty string allows Shufti to accept image or video
         verify_document: "1", // match face with document photo
       },
       // Optional UX tuning:
