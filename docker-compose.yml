@@ -7,7 +7,6 @@ services:
       - "3003:3000"
     env_file:
       - .env
-      - .env.docker
     volumes:
       # Use named volume for SQLite database persistence
       - sqlite-data:/app/data

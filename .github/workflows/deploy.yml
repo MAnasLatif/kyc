@@ -91,14 +91,10 @@ jobs:
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
             printf "%s" "${{ secrets.ENV_FILE }}" > .env
-          EOF
-
-      - name: Write .env.docker file on EC2
-        run: |
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
-            printf "DOCKER_IMAGE=%s:latest\n" "${{ env.DOCKER_IMAGE }}" > .env.docker
-            printf "CONTAINER_NAME=%s\n" "${{ env.APP_NAME }}" >> .env.docker
+            # Append Docker variables to .env for docker-compose
+            printf "\n# Docker settings (for docker-compose)\n" >> .env
+            printf "DOCKER_IMAGE=%s:latest\n" "${{ env.DOCKER_IMAGE }}" >> .env
+            printf "CONTAINER_NAME=%s\n" "${{ env.APP_NAME }}" >> .env
           EOF
 
       - name: Login to GHCR on EC2
