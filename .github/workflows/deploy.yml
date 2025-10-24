@@ -90,13 +90,7 @@ jobs:
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
-            printf "%s" "${{ secrets.ENV_FILE }}" > .env
-          EOF
-
-      - name: Write .env.docker file on EC2
-        run: |
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
+            printf "%s\n\n" "${{ secrets.ENV_FILE }}" > .env
             printf "DOCKER_IMAGE=%s:latest\n" "${{ env.DOCKER_IMAGE }}" > .env.docker
             printf "CONTAINER_NAME=%s\n" "${{ env.APP_NAME }}" >> .env.docker
           EOF
@@ -111,7 +105,7 @@ jobs:
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
-            docker compose --env-file .env.docker pull
+            docker compose pull
           EOF
 
       - name: Stop old containers
