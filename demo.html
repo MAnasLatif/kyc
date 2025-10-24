@@ -223,11 +223,18 @@
 
         <div class="iframe-container" id="iframeSection">
             <h2 style="margin-bottom: 15px; color: #333;">Complete Your Verification</h2>
-            <iframe id="kycIframe" allow="camera;microphone"></iframe>
-            <button class="back-btn" onclick="goBack()">← Back to Form</button>
-            <div class="status info" style="display: block; margin-top: 15px;">
-                <strong>Note:</strong> Follow the on-screen instructions to complete verification.
+            <div class="status info" style="display: block; margin-bottom: 15px;">
+                <strong>Instructions:</strong><br>
+                1. Allow camera access when prompted<br>
+                2. Have your ID document ready (Passport, ID Card, or Driving License)<br>
+                3. Ensure good lighting for clear photos<br>
+                4. Follow the on-screen steps to complete face and document verification
             </div>
+            <div id="iframeLoading" style="text-align: center; padding: 20px; color: #666;">
+                Loading verification interface...
+            </div>
+            <iframe id="kycIframe" allow="camera;microphone" style="display: none;"></iframe>
+            <button class="back-btn" onclick="goBack()">← Back to Form</button>
         </div>
     </div>
 
@@ -257,6 +264,10 @@
             iframeSection.classList.remove('active');
             formSection.style.display = 'block';
             kycIframe.src = '';
+            kycIframe.style.display = 'none';
+            document.getElementById('iframeLoading').style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Start Verification';
         }
 
         form.addEventListener('submit', async (e) => {
@@ -293,11 +304,34 @@
                     // Store reference for later
                     sessionStorage.setItem('kycReference', data.reference);
 
+                    console.log('Loading iframe URL:', data.iframeUrl);
+
                     // Show iframe
                     setTimeout(() => {
                         kycIframe.src = data.iframeUrl;
                         formSection.style.display = 'none';
                         iframeSection.classList.add('active');
+
+                        // Show iframe once it starts loading
+                        kycIframe.onload = function () {
+                            document.getElementById('iframeLoading').style.display = 'none';
+                            kycIframe.style.display = 'block';
+                            console.log('Iframe loaded successfully');
+                        };
+
+                        kycIframe.onerror = function () {
+                            document.getElementById('iframeLoading').innerHTML =
+                                '<div style="color: #dc3545;">Failed to load verification. Please try again or contact support.</div>';
+                            console.error('Iframe failed to load');
+                        };
+
+                        // Timeout fallback - show iframe after 3 seconds even if onload doesn't fire
+                        setTimeout(() => {
+                            if (kycIframe.style.display === 'none') {
+                                document.getElementById('iframeLoading').style.display = 'none';
+                                kycIframe.style.display = 'block';
+                            }
+                        }, 3000);
                     }, 1000);
                 } else {
                     showStatus(data.error || 'Failed to create session', 'error');
