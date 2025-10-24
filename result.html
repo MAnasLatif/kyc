@@ -180,6 +180,8 @@
             border-radius: 8px;
             border: 1px solid #f5c6cb;
             margin: 20px 0;
+            white-space: pre-wrap;
+            line-height: 1.6;
         }
 
         .info-box {
@@ -296,7 +298,7 @@
 
         async function loadData() {
             if (!reference) {
-                showError('No reference ID found. Please start a new verification.');
+                showError('No reference ID found. Please start a new verification from the home page.');
                 return;
             }
 
@@ -306,7 +308,11 @@
                 const sessionData = await sessionResponse.json();
 
                 if (!sessionData.ok) {
-                    showError(sessionData.error || 'Failed to load session data');
+                    if (sessionData.error === 'Session not found' || sessionData.error === 'Not found') {
+                        showError(`Session not found. This could mean:\n\n• The verification was not completed successfully\n• The session expired or was cancelled\n• The reference ID is incorrect\n\nReference: ${reference}\n\nPlease start a new verification.`);
+                    } else {
+                        showError(sessionData.error || 'Failed to load session data');
+                    }
                     return;
                 }
 

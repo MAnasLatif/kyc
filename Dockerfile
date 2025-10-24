@@ -53,8 +53,9 @@ RUN npx prisma generate
 # Copy built application from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 
-# Copy demo.html for the root endpoint
+# Copy HTML files for the web interface
 COPY --chown=nodejs:nodejs demo.html ./
+COPY --chown=nodejs:nodejs result.html ./
 
 # Copy startup script and make it executable
 COPY start.sh ./

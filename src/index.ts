@@ -44,6 +44,16 @@ app.get("/", (_, res) => {
   res.sendFile(path.join(__dirname, "../demo.html"));
 });
 
+// Serve demo.html explicitly
+app.get("/demo.html", (_, res) => {
+  res.sendFile(path.join(__dirname, "../demo.html"));
+});
+
+// Serve result.html
+app.get("/result.html", (_, res) => {
+  res.sendFile(path.join(__dirname, "../result.html"));
+});
+
 // Health check
 app.get("/health", (_, res) => {
   res.json({

@@ -137,12 +137,23 @@ router.get("/status/:reference", async (req, res) => {
  */
 router.get("/session/:reference", async (req, res) => {
   try {
+    console.log("🔍 Fetching session for reference:", req.params.reference);
     const session = await getSessionByReference(req.params.reference);
+    console.log("📊 Session found:", session ? "YES" : "NO");
+    if (session) {
+      console.log("📋 Session data:", {
+        reference: session.reference,
+        userId: session.userId,
+        status: session.status,
+      });
+    }
     if (!session) {
+      console.warn("⚠️  Session not found in database");
       return res.status(404).json({ ok: false, error: "Session not found" });
     }
     res.json({ ok: true, session });
   } catch (e: any) {
+    console.error("❌ Session fetch error:", e);
     res.status(400).json({ ok: false, error: e.message });
   }
 });
