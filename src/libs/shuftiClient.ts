@@ -14,7 +14,16 @@ const api = axios.create({
  */
 export async function getStatus(reference: string) {
   try {
-    const { data, status } = await api.post("/status", { reference });
+    const { data, status } = await api.post(
+      "/status",
+      { reference },
+      {
+        auth: {
+          username: CONFIG.CLIENT_ID,
+          password: CONFIG.SECRET_KEY,
+        },
+      }
+    );
     return { success: status === 200, status_code: status, response: data };
   } catch (error: any) {
     return {
