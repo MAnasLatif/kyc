@@ -111,28 +111,28 @@ jobs:
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
-            docker compose --env-file .env.docker pull
+            docker compose pull
           EOF
 
       - name: Stop old containers
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
-            docker compose --env-file .env.docker down || true
+            docker compose down || true
           EOF
 
       - name: Start containers
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
-            docker compose --env-file .env.docker up -d
+            docker compose up -d
           EOF
 
       - name: Check container status
         run: |
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/${{ secrets.EC2_USER }}/apps/${{ env.APP_NAME }}
-            docker compose --env-file .env.docker ps
+            docker compose ps
           EOF
 
       - name: Cleanup unused images
