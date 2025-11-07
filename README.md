@@ -1219,7 +1219,7 @@ ISC License - see LICENSE file for details
 | Development      | tsx, ts-node-dev                |
 | Containerization | Docker, Docker Compose          |
 
----
+---## ❤️ Thank You!
 
 **Built with ❤️ using TypeScript, Express, Prisma & GitHub Codespaces**
 
